@@ -25,8 +25,9 @@ WebMiner --input <html-dir> [options]
 | Flag | Default | Purpose |
 |------|---------|---------|
 | `--input, -i <path>` | *required* | Directory containing `*.html` / `*.htm` files |
-| `--component-selector, -c <css>` | `#ppd` | CSS selector for the main content area on each page |
+| `--component-selector, -c <css>` | *(none)* | CSS selector for the main content area on each page |
 | `--require-size <bytes>` | `500000` | Minimum page size in bytes (smaller pages are skipped) |
+| `--limit, -l <N>` | `0` (no limit) | Load at most N pages from the input directory |
 | `--no-trust-samples` | off | Validate and clean samples instead of trusting them |
 | `--help, -h` | — | Print usage |
 
