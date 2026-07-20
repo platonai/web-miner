@@ -1,0 +1,155 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v0.1.0)'
+        required: true
+        type: string
+
+concurrency:
+  group: release-${{ github.event.inputs.tag || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - name: Resolve release metadata
+        id: meta
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ github.event.inputs.tag }}"
+          else
+            TAG="${GITHUB_REF#refs/tags/}"
+          fi
+
+          VERSION="${TAG#v}"
+
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Invalid version format: $VERSION (expected X.Y.Z)"
+            exit 1
+          fi
+
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Verify assets
+        id: verify
+        shell: bash
+        run: |
+          echo "::group::Verifying release assets"
+
+          JAR_PATH="scent-miner.jar"
+          LAUNCHER_PATH="bin/webminer.ps1"
+
+          if [ ! -f "$JAR_PATH" ]; then
+            echo "::error::JAR not found: $JAR_PATH"
+            exit 1
+          fi
+
+          if [ ! -f "$LAUNCHER_PATH" ]; then
+            echo "::error::Launcher not found: $LAUNCHER_PATH"
+            exit 1
+          fi
+
+          JAR_SIZE=$(stat -c%s "$JAR_PATH")
+          JAR_SIZE_HUMAN=$(numfmt --to=iec --suffix=B "$JAR_SIZE" 2>/dev/null || echo "$JAR_SIZE bytes")
+
+          echo "jar_size=$JAR_SIZE" >> "$GITHUB_OUTPUT"
+          echo "jar_size_human=$JAR_SIZE_HUMAN" >> "$GITHUB_OUTPUT"
+
+          echo "📦 scent-miner.jar — $JAR_SIZE_HUMAN"
+          echo "📜 bin/webminer.ps1"
+
+          echo "::endgroup::"
+
+      - name: Generate release notes
+        id: notes
+        shell: bash
+        run: |
+          VERSION="${{ steps.meta.outputs.version }}"
+          JAR_SIZE="${{ steps.verify.outputs.jar_size_human }}"
+
+          cat > /tmp/release_notes.md << EOF
+          ## 📦 Assets
+
+          | Asset | Description |
+          |-------|-------------|
+          | **scent-miner.jar** | ProGuard-obfuscated fat JAR ($JAR_SIZE) |
+          | **webminer.ps1** | PowerShell launcher — auto-detects Java 17+ |
+
+          ## ⚡ Quick Start
+
+          ```powershell
+          # Download both files and run:
+          .\webminer.ps1 --input C:\path\to\html\files
+          ```
+
+          Or directly with Java:
+
+          ```bash
+          java -jar scent-miner.jar --input /path/to/html/files
+          ```
+
+          ## 🔧 Requirements
+
+          - **JDK 17+** ([Adoptium](https://adoptium.net/download/) recommended)
+          - **Windows x86_64** (native libraries are Windows-only)
+          EOF
+
+          echo "notes_file=/tmp/release_notes.md" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65  # v2.6.2
+        with:
+          files: |
+            scent-miner.jar
+            bin/webminer.ps1
+          name: WebMiner v${{ steps.meta.outputs.version }}
+          body_path: /tmp/release_notes.md
+          tag_name: ${{ steps.meta.outputs.tag }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Release summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## 🚀 Release v${{ steps.meta.outputs.version }}"
+            echo ""
+            echo "- **Version**: ${{ steps.meta.outputs.version }}"
+            echo "- **Tag**: ${{ steps.meta.outputs.tag }}"
+            echo "- **Status**: ${{ job.status }}"
+            echo ""
+            if [ "${{ job.status }}" = "success" ]; then
+              echo "🔗 [Release Page](https://github.com/${{ github.repository }}/releases/tag/${{ steps.meta.outputs.tag }})"
+              echo ""
+              echo "📥 Download:"
+              echo '```bash'
+              echo "wget https://github.com/${{ github.repository }}/releases/download/${{ steps.meta.outputs.tag }}/scent-miner.jar"
+              echo "wget https://github.com/${{ github.repository }}/releases/download/${{ steps.meta.outputs.tag }}/webminer.ps1"
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
