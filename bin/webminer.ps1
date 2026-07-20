@@ -1,30 +1,38 @@
 #!/usr/bin/env pwsh
 <#
 .SYNOPSIS
-    PowerShell wrapper for WebMiner — load local HTML and run the Scent ML mining pipeline.
+    WebMiner — extract structured data from local HTML files.
 
 .DESCRIPTION
-    Auto-discovers the project root, resolves Java 17, and invokes WebMiner
-    via Maven exec:java against the scent-engine module.
-
-    All arguments are forwarded transparently to WebMiner.main().
+    Finds a Java 17+ installation and launches the WebMiner fat JAR
+    with all required JVM module-opens flags.  Every argument is
+    forwarded directly to WebMiner.main().
 
 .PARAMETER JavaHome
-    Explicit JAVA_HOME path (e.g. "D:\Program Files\OpenLogic\jdk-17.0.14.7-hotspot").
-    If omitted the script auto-detects a Java 17 installation.
+    Explicit JAVA_HOME path.  If omitted the script auto-detects a
+    Java 17+ installation.
 
 .EXAMPLE
-    .\bin\webminer.ps1 --input C:\data\html-pages
-    .\bin\webminer.ps1 --input C:\data\html-pages --output .\my-views
-    .\bin\webminer.ps1 --input C:\data\html-pages --out-link-selector "a[href~=/product/]" --top-links 50
-    .\bin\webminer.ps1 --input C:\data\html-pages --refresh --no-trust-samples
-    .\bin\webminer.ps1 --input C:\data\html-pages -c "#main-content"
-    .\bin\webminer.ps1 --help
+    .\webminer.ps1 --input C:\data\html-pages
+
+.EXAMPLE
+    .\webminer.ps1 --input C:\data\html-pages -c "#mainContent" -l 50
+
+.EXAMPLE
+    .\webminer.ps1 --input C:\data\html-pages --no-trust-samples --require-size 1000000
+
+.EXAMPLE
+    .\webminer.ps1 --help
+
+.EXAMPLE
+    .\webminer.ps1 -JavaHome "D:\jdk-17" --input C:\data\html-pages
 #>
 
 $ErrorActionPreference = 'Stop'
 
-# Parse our own flags out of $args so nothing pollutes the WebMiner arguments.
+# ------------------------------------------------------------------
+# Parse -JavaHome out of the argument list
+# ------------------------------------------------------------------
 $JavaHome = ''
 $RemainingArgs = @()
 
@@ -42,24 +50,12 @@ while ($i -lt $args.Count) {
 }
 
 # ------------------------------------------------------------------
-# Resolve project root (walk up from script directory)
+# Resolve the script directory
 # ------------------------------------------------------------------
-function Find-ProjectRoot {
-    $dir = $PSScriptRoot
-    while ($dir -and $dir.Length -gt 3) {
-        if ((Test-Path "$dir\mvnw.cmd") -or (Test-Path "$dir\mvnw")) {
-            return (Resolve-Path $dir).Path
-        }
-        $dir = Split-Path $dir -Parent
-    }
-    # Fallback: assume script is in <root>/bin/
-    $fallback = Resolve-Path "$PSScriptRoot\.." -ErrorAction SilentlyContinue
-    if ($fallback) { return $fallback.Path }
-    throw 'Cannot find project root (no mvnw.cmd/mvnw found in ancestor directories).'
-}
+$ScriptDir = Split-Path $PSCommandPath -Parent
 
 # ------------------------------------------------------------------
-# Find Java 17
+# Find Java 17+
 # ------------------------------------------------------------------
 function Find-Java17 {
     param([string] $ExplicitHome)
@@ -70,19 +66,19 @@ function Find-Java17 {
         throw "JAVA_HOME not found at: $ExplicitHome"
     }
 
-    # Check JAVA_HOME env var first
+    # 1. JAVA_HOME env var
     $envJavaHome = $env:JAVA_HOME
     if ($envJavaHome) {
         $javaExe = Join-Path $envJavaHome 'bin\java.exe'
         if (Test-Path $javaExe) {
             $ver = & $javaExe -version 2>&1 | Select-Object -First 1
-            if ($ver -match 'version "(\d+)') {
-                if ([int]$Matches[1] -ge 17) { return $envJavaHome }
+            if ($ver -match 'version "(\d+)' -and [int]$Matches[1] -ge 17) {
+                return $envJavaHome
             }
         }
     }
 
-    # Search common locations on Windows
+    # 2. Common Windows install locations
     $candidates = @(
         'D:\Program Files\OpenLogic\jdk-17.0.14.7-hotspot',
         'C:\Program Files\OpenLogic\jdk-17.0.14.7-hotspot',
@@ -97,7 +93,7 @@ function Find-Java17 {
         if (Test-Path $javaExe) { return $candidate }
     }
 
-    # As a last resort, try `java` on PATH
+    # 3. `java` on PATH
     $pathJava = Get-Command java -ErrorAction SilentlyContinue
     if ($pathJava) {
         $ver = & java -version 2>&1 | Select-Object -First 1
@@ -110,25 +106,48 @@ function Find-Java17 {
     throw @"
 No Java 17+ installation found.
 Set JAVA_HOME or pass -JavaHome explicitly.
-Checked:
-  ${($candidates -join "`n  ")}
-  JAVA_HOME=$envJavaHome
-  PATH
+
+Download a JDK:
+  https://adoptium.net/download/
+  https://jdk.java.net/17/
+  https://www.microsoft.com/openjdk
+"@
+}
+
+# ------------------------------------------------------------------
+# Find the WebMiner JAR (next to this script, or in the repo root)
+# ------------------------------------------------------------------
+function Find-WebMinerJar {
+    # 1. Next to the script
+    $besideScript = Join-Path $ScriptDir 'scent-miner.jar'
+    if (Test-Path $besideScript) { return $besideScript }
+
+    # 2. Repo root
+    $repoRoot = Join-Path $ScriptDir 'scent-miner.jar'
+    if (Test-Path $repoRoot) { return $repoRoot }
+
+    throw @"
+Cannot find scent-miner.jar.
+
+Expected locations:
+  $ScriptDir\scent-miner.jar
+
+Download the latest release from:
+  https://github.com/platonai/web-miner/releases
 "@
 }
 
 # ------------------------------------------------------------------
 # Main
 # ------------------------------------------------------------------
-$ProjectRoot = Find-ProjectRoot
-Write-Verbose "Project root: $ProjectRoot"
-
 $Java17Home = Find-Java17 -ExplicitHome $JavaHome
 Write-Verbose "Java 17 home: $Java17Home"
-
 $env:JAVA_HOME = $Java17Home
 
-# Module-opens required by the stack
+$JarPath = Find-WebMinerJar
+Write-Verbose "WebMiner JAR: $JarPath"
+
+# Required JVM module-opens for the stack
 $ModuleOpts = @(
     '--add-opens=java.base/java.lang=ALL-UNNAMED',
     '--add-opens=java.base/java.lang.invoke=ALL-UNNAMED',
@@ -146,26 +165,15 @@ $ModuleOpts = @(
     '--add-opens=java.security.jgss/sun.security.krb5=ALL-UNNAMED'
 )
 
-$mvnw = Join-Path $ProjectRoot 'mvnw.cmd'
-if (-not (Test-Path $mvnw)) {
-    throw "Maven wrapper not found at: $mvnw"
-}
+$appName = if ($env:APP_NAME) { $env:APP_NAME } else { 'webminer' }
 
-# Pass app.name so pulsar-common resolves a consistent tmp prefix
-$appName = if ($env:APP_NAME) { $env:APP_NAME } else { 'browser4' }
-$env:MAVEN_OPTS = "-Dapp.name=$appName $($ModuleOpts -join ' ')"
+$javaArgs = @(
+    "-Dapp.name=$appName"
+) + $ModuleOpts + @(
+    '-jar', $JarPath
+) + $RemainingArgs
 
-Write-Host '[WebMiner] Running via Maven exec:java (scent-miner)' -ForegroundColor DarkGray
-
-$mvnArgs = @(
-    '-q',
-    'exec:java',
-    '-pl', 'scent-miner',
-    '-Dexec.mainClass=ai.platon.scent.miner.WebMiner'
-)
-if ($RemainingArgs.Count -gt 0) {
-    $mvnArgs += '-Dexec.args=' + ($RemainingArgs -join ' ')
-}
-
-& cmd /c $mvnw @mvnArgs
+Write-Host '[WebMiner] Launching ...' -ForegroundColor DarkGray
+$javaExe = Join-Path $Java17Home 'bin\java.exe'
+& $javaExe @javaArgs
 exit $LASTEXITCODE
