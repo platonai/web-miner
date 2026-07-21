@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= typeof title !== 'undefined' ? title + ' — ' : '' %>ShopVista — Mock E-Commerce</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛒</text></svg>">
+</head>
+<body>
+
+<!-- Top Banner -->
+<div class="top-banner">
+  🚀 Free shipping on orders over $25 &nbsp;|&nbsp;
+  <a href="/">Shop deals</a> &nbsp;|&nbsp;
+  New customer? <a href="#">Start here.</a>
+</div>
+
+<!-- Site Navigation -->
+<nav class="site-nav">
+  <div class="nav-inner">
+    <a href="/" class="nav-logo"><span class="accent">Shop</span>Vista</a>
+    <form class="nav-search" onsubmit="event.preventDefault(); const q=this.querySelector('input').value.trim(); if(q) window.location.href='/search?q='+encodeURIComponent(q);">
+      <input type="text" placeholder="Search products..." aria-label="Search products">
+      <button type="submit">🔍</button>
+    </form>
+    <div class="nav-links">
+      <a href="/" class="hide-mobile">Home</a>
+      <a href="/category/electronics">Deals</a>
+      <a href="#" class="hide-mobile">Orders</a>
+      <a href="#" class="nav-cart">
+        🛒 <span class="badge" style="display:none">0</span>
+      </a>
+    </div>
+  </div>
+</nav>
+
+<!-- Category Bar -->
+<div class="cat-bar">
+  <div class="cat-bar-inner">
+    <% if (typeof CATEGORIES !== 'undefined') { %>
+      <% CATEGORIES.forEach(function(cat) { %>
+        <a href="/category/<%= cat.slug %>"
+           class="<%= (typeof currentCategory !== 'undefined' && currentCategory === cat.slug) ? 'active' : '' %>">
+          <span><%= cat.icon %></span> <%= cat.name %>
+        </a>
+      <% }); %>
+    <% } %>
+  </div>
+</div>
+
+<!-- Breadcrumbs (only if defined) -->
+<% if (typeof crumbs !== 'undefined' && crumbs.length) { %>
+<div class="breadcrumbs">
+  <% crumbs.forEach(function(crumb, i) { %>
+    <% if (i > 0) { %><span class="sep">›</span><% } %>
+    <% if (crumb.url) { %>
+      <a href="<%= crumb.url %>"><%= crumb.name %></a>
+    <% } else { %>
+      <span><%= crumb.name %></span>
+    <% } %>
+  <% }); %>
+</div>
+<% } %>

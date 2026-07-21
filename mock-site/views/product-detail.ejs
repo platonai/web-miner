@@ -1,0 +1,89 @@
+<%
+// ── Product Detail Page ──────────────────────────────────────────────────
+%>
+<%- include('partials/header', { title: product.title.slice(0, 60), CATEGORIES: CATEGORIES, crumbs: crumbs }) %>
+
+<div class="product-detail">
+    <!-- Generated product: show our own detail layout -->
+    <div class="product-content fade-in">
+      <div class="product-gallery">
+        <div class="main-img">
+          <img src="<%= product.image %>?h=<%= (product.title || '').length % 360 %>&w=500" alt="<%= product.title %>" style="max-width:400px;margin:0 auto;">
+        </div>
+        <div class="buy-box">
+          <h1 style="font-size:1.3rem;line-height:1.3;margin-bottom:8px;"><%= product.title %></h1>
+          <div style="color:#c45500;font-size:0.85rem;margin-bottom:4px;">Visit the Generic Store</div>
+          <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:2px;">
+            <span class="stars" style="color:var(--clr-star);font-size:0.95rem;"><%= ['★★★☆☆','★★★★☆','★★★★★'][(product.title || '').length % 3] %></span>
+            <span style="font-size:0.8rem;color:var(--clr-info);"><%= 100 + (product.title || '').length % 2400 %> ratings</span>
+          </div>
+          <hr style="margin:12px 0;border-color:var(--clr-border);">
+          <div class="price-lg" data-base-price="<%= product.price.toFixed(2) %>">
+            <span class="symbol">$</span><%= Math.floor(product.price) %><span style="font-size:1rem;vertical-align:super;">.<%= String(Math.round((product.price % 1) * 100)).padStart(2, '0') %></span>
+          </div>
+          <div class="stock">✓ In Stock</div>
+          <div class="delivery">
+            FREE delivery <strong><%= ['Monday','Tuesday','Wednesday','Thursday','Friday'][(product.title || '').length % 5] %>, <%= ['August 3','August 5','August 7','August 10'][(product.title || '').length % 4] %></strong>.
+            <br>Or fastest delivery <strong>Tomorrow</strong>.
+          </div>
+          <div style="margin:8px 0;">
+            <label style="font-size:0.85rem;font-weight:600;">Quantity:</label>
+            <select name="quantity" style="margin-left:8px;padding:4px 8px;border-radius:4px;border:1px solid var(--clr-border);">
+              <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+              <option value="4">4</option><option value="5">5</option>
+            </select>
+          </div>
+          <button class="btn-lg btn-add">Add to Cart</button>
+          <button class="btn-lg btn-buy">Buy Now</button>
+        </div>
+      </div>
+
+      <!-- Product Description -->
+      <div class="rich-content fade-up">
+        <h2>About this item</h2>
+        <ul style="list-style:disc;padding-left:20px;line-height:1.8;columns:2;column-gap:40px;">
+          <li>Premium quality materials for long-lasting durability</li>
+          <li>Engineered for superior performance and reliability</li>
+          <li>Ergonomic design with user comfort in mind</li>
+          <li>Easy to set up and use right out of the box</li>
+          <li>Backed by industry-leading warranty and support</li>
+          <li>Compatible with a wide range of devices and systems</li>
+        </ul>
+      </div>
+
+      <!-- Specs Table -->
+      <div class="rich-content fade-up">
+        <h2>Product Specifications</h2>
+        <table class="striped">
+          <tr><td><strong>Brand</strong></td><td>Generic</td></tr>
+          <tr><td><strong>Model</strong></td><td>G-<%= product.id.slice(0, 6).toUpperCase() %></td></tr>
+          <tr><td><strong>Color</strong></td><td><%= ['Black','White','Silver','Blue','Red'][(product.title || '').length % 5] %></td></tr>
+          <tr><td><strong>Material</strong></td><td><%= ['Aluminum','Plastic','Stainless Steel','Silicone','Carbon Fiber'][(product.title || '').length % 5] %></td></tr>
+          <tr><td><strong>Dimensions</strong></td><td><%= 5 + (product.title || '').length % 20 %> × <%= 3 + (product.title || '').length % 15 %> × <%= 1 + (product.title || '').length % 8 %> inches</td></tr>
+          <tr><td><strong>Weight</strong></td><td><%= (0.5 + ((product.title || '').length % 50) / 10).toFixed(1) %> lbs</td></tr>
+          <tr><td><strong>Warranty</strong></td><td><%= [1, 2, 3, 5][(product.title || '').length % 4] %>-year limited</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- Related Products -->
+    <div class="related-section fade-up">
+      <h2>Customers who viewed this item also viewed</h2>
+      <div class="related-grid">
+        <% related.forEach(function(rp) { %>
+          <div class="product-card">
+            <div class="img-wrap">
+              <img src="<%= rp.image %>?h=<%= (rp.title || '').length % 360 %>&off=<%= (rp.id || '').length %>" alt="<%= rp.title %>" loading="lazy">
+            </div>
+            <div class="info">
+              <div class="title"><a href="/product/<%= rp.id %>"><%= rp.title %></a></div>
+              <div class="rating"><span class="stars"><%= ['★★★☆☆','★★★★☆','★★★★★'][(rp.title || '').length % 3] %></span></div>
+              <div class="price"><span class="symbol">$</span><%= Math.floor(rp.price) %><span class="cents">.<%= String(Math.round((rp.price % 1) * 100)).padStart(2, '0') %></span></div>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+    </div>
+</div>
+
+<%- include('partials/footer') %>

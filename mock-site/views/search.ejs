@@ -1,0 +1,52 @@
+<%
+// ── Search Results Page ───────────────────────────────────────────────────
+var crumbs = [
+  { name: 'Home', url: '/' },
+  { name: 'Search: ' + query, url: null },
+];
+%>
+<%- include('partials/header', { title: 'Search: ' + query, CATEGORIES: CATEGORIES, crumbs: crumbs }) %>
+
+<section class="section">
+  <div class="section-inner">
+    <div class="section-header">
+      <h2>Search results for "<%= query %>"</h2>
+      <span style="color:var(--clr-text-muted)"><%= total %> result<%= total !== 1 ? 's' : '' %> found</span>
+    </div>
+
+    <% if (results.length === 0) { %>
+      <div style="text-align:center;padding:60px 20px;">
+        <div style="font-size:4rem;margin-bottom:16px;">🔍</div>
+        <h3>No results found</h3>
+        <p style="color:var(--clr-text-muted);margin:8px 0 20px;">
+          We couldn't find any products matching "<strong><%= query %></strong>". Try a different search term.
+        </p>
+        <a href="/" class="btn-primary">Back to Home</a>
+      </div>
+    <% } else { %>
+      <div class="product-grid">
+        <% results.forEach(function(product) { %>
+          <div class="product-card">
+            <div class="img-wrap">
+              <img src="<%= product.image %>?h=<%= (product.title || '').length % 360 %>&off=<%= (product.id || '').length %>" alt="<%= product.title %>" loading="lazy">
+            </div>
+            <div class="info">
+              <div class="title"><a href="/product/<%= product.id %>"><%= product.title %></a></div>
+              <div class="rating">
+                <span class="stars"><%= ['★★★☆☆','★★★★☆','★★★★★'][(product.title || '').length % 3] %></span>
+                <span><%= 100 + (product.title || '').length % 2400 %></span>
+              </div>
+              <div class="price"><span class="symbol">$</span><%= Math.floor(product.price) %><span class="cents">.<%= String(Math.round((product.price % 1) * 100)).padStart(2, '0') %></span></div>
+            </div>
+            <div class="actions">
+              <button class="btn-sm btn-sm-primary">Add to Cart</button>
+              <button class="btn-sm btn-sm-outline">♡</button>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+    <% } %>
+  </div>
+</section>
+
+<%- include('partials/footer') %>

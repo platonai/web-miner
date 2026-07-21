@@ -1,0 +1,69 @@
+<%
+// ── Category Listing Page ─────────────────────────────────────────────────
+var crumbs = [
+  { name: 'Home', url: '/' },
+  { name: cat.name, url: null },
+];
+%>
+<%- include('partials/header', { title: cat.name, CATEGORIES: CATEGORIES, currentCategory: cat.slug, crumbs: crumbs }) %>
+
+<!-- Filter Bar -->
+<div class="filter-bar">
+  <div class="filter-inner">
+    <span><strong><%= totalProducts %></strong> results in <strong><%= cat.name %></strong></span>
+    <span style="margin-left:auto">Sort by:</span>
+    <a href="?sort=featured&page=<%= page %>" class="sort-btn <%= (typeof sort === 'undefined' || sort === 'featured') ? 'active' : '' %>">Featured</a>
+    <a href="?sort=price-asc&page=<%= page %>" class="sort-btn <%= sort === 'price-asc' ? 'active' : '' %>">Price: Low to High</a>
+    <a href="?sort=price-desc&page=<%= page %>" class="sort-btn <%= sort === 'price-desc' ? 'active' : '' %>">Price: High to Low</a>
+    <a href="?sort=newest&page=<%= page %>" class="sort-btn <%= sort === 'newest' ? 'active' : '' %>">Newest</a>
+  </div>
+</div>
+
+<!-- Product Grid -->
+<section class="section">
+  <div class="section-inner">
+    <div class="product-grid">
+      <% products.forEach(function(product) { %>
+        <div class="product-card">
+          <div class="img-wrap">
+            <span class="badge">NEW</span>
+            <img src="<%= product.image %>?h=<%= (product.title || '').length % 360 %>&off=<%= (product.id || '').length %>" alt="<%= product.title %>" loading="lazy">
+          </div>
+          <div class="info">
+            <div class="title"><a href="/product/<%= product.id %>"><%= product.title %></a></div>
+            <div class="rating">
+              <span class="stars"><%= ['★★★☆☆','★★★★☆','★★★★★'][(product.title || '').length % 3] %></span>
+              <span><%= 100 + (product.title || '').length % 2400 %></span>
+            </div>
+            <div class="price"><span class="symbol">$</span><%= Math.floor(product.price) %><span class="cents">.<%= String(Math.round((product.price % 1) * 100)).padStart(2, '0') %></span></div>
+          </div>
+          <div class="actions">
+            <button class="btn-sm btn-sm-primary">Add to Cart</button>
+            <button class="btn-sm btn-sm-outline">♡</button>
+          </div>
+        </div>
+      <% }); %>
+    </div>
+
+    <!-- Pagination -->
+    <% if (totalPages > 1) { %>
+    <div class="pagination">
+      <% if (page > 1) { %>
+        <a href="?sort=<%= sort %>&page=<%= page - 1 %>">‹</a>
+      <% } %>
+      <% for (var p = 1; p <= totalPages; p++) { %>
+        <% if (p === 1 || p === totalPages || Math.abs(p - page) <= 2) { %>
+          <a href="?sort=<%= sort %>&page=<%= p %>" class="<%= p === page ? 'active' : '' %>"><%= p %></a>
+        <% } else if (Math.abs(p - page) === 3) { %>
+          <span class="ellipsis">…</span>
+        <% } %>
+      <% } %>
+      <% if (page < totalPages) { %>
+        <a href="?sort=<%= sort %>&page=<%= page + 1 %>">›</a>
+      <% } %>
+    </div>
+    <% } %>
+  </div>
+</section>
+
+<%- include('partials/footer') %>

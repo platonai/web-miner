@@ -1,0 +1,115 @@
+<%- include('partials/header', { title: 'Home', CATEGORIES: CATEGORIES, crumbs: [] }) %>
+
+<!-- Hero Section -->
+<section class="hero fade-in">
+  <div class="hero-inner">
+    <div class="hero-content">
+      <h1>Discover <span class="highlight">amazing deals</span><br/>on everything you love</h1>
+      <p>Shop millions of products across electronics, home, books, sports, and more. Fast shipping, easy returns, and the best prices online.</p>
+      <a href="/category/electronics" class="btn-primary">Shop Best Sellers →</a>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-card"><div class="icon">📦</div><div class="value"><%= allProducts ? allProducts.length.toLocaleString() : 0 %>+</div><div class="label">Products</div></div>
+      <div class="hero-card"><div class="icon">📂</div><div class="value">5</div><div class="label">Categories</div></div>
+      <div class="hero-card"><div class="icon">⚡</div><div class="value">Free</div><div class="label">Shipping $25+</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- Shop by Category -->
+<section class="section fade-up">
+  <div class="section-inner">
+    <div class="section-header">
+      <h2>Shop by Category</h2>
+      <a href="/category/electronics">View all →</a>
+    </div>
+    <div class="cat-grid">
+      <% CATEGORIES.forEach(function(cat) { %>
+        <a href="/category/<%= cat.slug %>" class="cat-card">
+          <div class="cat-icon"><%= cat.icon %></div>
+          <div class="cat-info">
+            <h3><%= cat.name %></h3>
+            <p><%= cat.desc %></p>
+            <div class="count">
+              <%= (typeof productsByCategory !== 'undefined' && productsByCategory[cat.slug])
+                    ? productsByCategory[cat.slug].length : 0 %> products
+            </div>
+          </div>
+        </a>
+      <% }); %>
+    </div>
+  </div>
+</section>
+
+<!-- Today's Deals -->
+<section class="section fade-up">
+  <div class="section-inner">
+    <div class="section-header">
+      <h2>🔥 Today's Deals</h2>
+      <a href="/category/electronics">See all deals →</a>
+    </div>
+    <div class="deals-strip">
+      <% if (typeof deals !== 'undefined') { %>
+        <% deals.forEach(function(product) { %>
+          <div class="product-card">
+            <div class="img-wrap">
+              <span class="badge">DEAL</span>
+              <img src="<%= product.image %>?h=<%= (product.title || '').length % 360 %>" alt="<%= product.title %>" loading="lazy">
+            </div>
+            <div class="info">
+              <div class="title"><a href="/product/<%= product.id %>"><%= product.title %></a></div>
+              <div class="rating">
+                <span class="stars">★★★★☆</span>
+                <span><%= (100 + (product.title || '').length % 900) %></span>
+              </div>
+              <div class="price"><span class="symbol">$</span><%= Math.floor(product.price) %><span class="cents">.<%= String(Math.round((product.price % 1) * 100)).padStart(2, '0') %></span></div>
+              <div class="prime">✓ Prime</div>
+            </div>
+            <div class="actions">
+              <button class="btn-sm btn-sm-primary">Add to Cart</button>
+              <button class="btn-sm btn-sm-outline">♡</button>
+            </div>
+          </div>
+        <% }); %>
+      <% } %>
+    </div>
+  </div>
+</section>
+
+<!-- Featured by Category -->
+<% if (typeof featured !== 'undefined') { %>
+  <% featured.forEach(function(row) { %>
+    <section class="section fade-up">
+      <div class="section-inner">
+        <div class="section-header">
+          <h2><%= row.cat.icon %> <%= row.cat.name %></h2>
+          <a href="/category/<%= row.cat.slug %>">Shop all <%= row.cat.name %> →</a>
+        </div>
+        <div class="product-grid">
+          <% row.products.forEach(function(product) { %>
+            <div class="product-card">
+              <div class="img-wrap">
+                <img src="<%= product.image %>?h=<%= (product.title || '').length % 360 %>&off=<%= (product.id || '').length %>" alt="<%= product.title %>" loading="lazy">
+              </div>
+              <div class="info">
+                <div class="title"><a href="/product/<%= product.id %>"><%= product.title %></a></div>
+                <div class="rating">
+                  <span class="stars">★★★★<%= ['☆','★'][(product.title || '').length % 2] %></span>
+                  <span><%= (100 + (product.title || '').length % 2400) %></span>
+                </div>
+                <div class="price"><span class="symbol">$</span><%= Math.floor(product.price) %><span class="cents">.<%= String(Math.round((product.price % 1) * 100)).padStart(2, '0') %></span></div>
+                <div class="prime">✓ Prime</div>
+              </div>
+              <div class="actions">
+                <button class="btn-sm btn-sm-primary">Add to Cart</button>
+                <button class="btn-sm btn-sm-outline">♡</button>
+              </div>
+            </div>
+          <% }); %>
+        </div>
+      </div>
+    </section>
+  <% }); %>
+<% } %>
+
+<%- include('partials/footer') %>
