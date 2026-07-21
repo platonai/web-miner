@@ -118,19 +118,21 @@ Download a JDK:
 # Find the WebMiner JAR (next to this script, or in the repo root)
 # ------------------------------------------------------------------
 function Find-WebMinerJar {
-    # 1. Next to the script
-    $besideScript = Join-Path $ScriptDir 'scent-miner.jar'
-    if (Test-Path $besideScript) { return $besideScript }
-
-    # 2. Repo root
-    $repoRoot = Join-Path $ScriptDir 'scent-miner.jar'
-    if (Test-Path $repoRoot) { return $repoRoot }
+    # Walk up from the script directory so the JAR is found whether the
+    # script runs from bin/ (published layout, 1 level up) or from
+    # skills/scent-miner/scripts/ (source layout, 3 levels up).
+    $dir = $ScriptDir
+    while ($dir -and $dir.Length -gt 3) {
+        $candidate = Join-Path $dir 'scent-miner.jar'
+        if (Test-Path $candidate) { return (Resolve-Path $candidate).Path }
+        $parent = Split-Path $dir -Parent
+        if ($parent -eq $dir) { break }
+        $dir = $parent
+    }
 
     throw @"
 Cannot find scent-miner.jar.
-
-Expected locations:
-  $ScriptDir\scent-miner.jar
+Searched upward from: $ScriptDir
 
 Download the latest release from:
   https://github.com/platonai/web-miner/releases
