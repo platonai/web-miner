@@ -1,89 +1,331 @@
-<%
-// ── Product Detail Page ──────────────────────────────────────────────────
-%>
-<%- include('partials/header', { title: product.title.slice(0, 60), CATEGORIES: CATEGORIES, crumbs: crumbs }) %>
+<%- include('partials/header', { title: product.title, CATEGORIES: CATEGORIES, crumbs: crumbs, currentCategory: product.category }) %>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     PRODUCT DETAIL PAGE — Rich with non-deterministic / volatile DOM elements
+     Each request renders different combinations of optional sections.
+     ═══════════════════════════════════════════════════════════════════════════ -->
 
 <div class="product-detail">
-    <!-- Generated product: show our own detail layout -->
-    <div class="product-content fade-in">
-      <div class="product-gallery">
-        <div class="main-img">
-          <img src="<%= product.image %>?h=<%= (product.title || '').length % 360 %>&w=500" alt="<%= product.title %>" style="max-width:400px;margin:0 auto;">
-        </div>
-        <div class="buy-box">
-          <h1 style="font-size:1.3rem;line-height:1.3;margin-bottom:8px;"><%= product.title %></h1>
-          <div style="color:#c45500;font-size:0.85rem;margin-bottom:4px;">Visit the Generic Store</div>
-          <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:2px;">
-            <span class="stars" style="color:var(--clr-star);font-size:0.95rem;"><%= ['★★★☆☆','★★★★☆','★★★★★'][(product.title || '').length % 3] %></span>
-            <span style="font-size:0.8rem;color:var(--clr-info);"><%= 100 + (product.title || '').length % 2400 %> ratings</span>
-          </div>
-          <hr style="margin:12px 0;border-color:var(--clr-border);">
-          <div class="price-lg" data-base-price="<%= product.price.toFixed(2) %>">
-            <span class="symbol">$</span><%= Math.floor(product.price) %><span style="font-size:1rem;vertical-align:super;">.<%= String(Math.round((product.price % 1) * 100)).padStart(2, '0') %></span>
-          </div>
-          <div class="stock">✓ In Stock</div>
-          <div class="delivery">
-            FREE delivery <strong><%= ['Monday','Tuesday','Wednesday','Thursday','Friday'][(product.title || '').length % 5] %>, <%= ['August 3','August 5','August 7','August 10'][(product.title || '').length % 4] %></strong>.
-            <br>Or fastest delivery <strong>Tomorrow</strong>.
-          </div>
-          <div style="margin:8px 0;">
-            <label style="font-size:0.85rem;font-weight:600;">Quantity:</label>
-            <select name="quantity" style="margin-left:8px;padding:4px 8px;border-radius:4px;border:1px solid var(--clr-border);">
-              <option value="1">1</option><option value="2">2</option><option value="3">3</option>
-              <option value="4">4</option><option value="5">5</option>
-            </select>
-          </div>
-          <button class="btn-lg btn-add">Add to Cart</button>
-          <button class="btn-lg btn-buy">Buy Now</button>
-        </div>
-      </div>
+  <div class="product-content">
 
-      <!-- Product Description -->
-      <div class="rich-content fade-up">
-        <h2>About this item</h2>
-        <ul style="list-style:disc;padding-left:20px;line-height:1.8;columns:2;column-gap:40px;">
-          <li>Premium quality materials for long-lasting durability</li>
-          <li>Engineered for superior performance and reliability</li>
-          <li>Ergonomic design with user comfort in mind</li>
-          <li>Easy to set up and use right out of the box</li>
-          <li>Backed by industry-leading warranty and support</li>
-          <li>Compatible with a wide range of devices and systems</li>
-        </ul>
-      </div>
-
-      <!-- Specs Table -->
-      <div class="rich-content fade-up">
-        <h2>Product Specifications</h2>
-        <table class="striped">
-          <tr><td><strong>Brand</strong></td><td>Generic</td></tr>
-          <tr><td><strong>Model</strong></td><td>G-<%= product.id.slice(0, 6).toUpperCase() %></td></tr>
-          <tr><td><strong>Color</strong></td><td><%= ['Black','White','Silver','Blue','Red'][(product.title || '').length % 5] %></td></tr>
-          <tr><td><strong>Material</strong></td><td><%= ['Aluminum','Plastic','Stainless Steel','Silicone','Carbon Fiber'][(product.title || '').length % 5] %></td></tr>
-          <tr><td><strong>Dimensions</strong></td><td><%= 5 + (product.title || '').length % 20 %> × <%= 3 + (product.title || '').length % 15 %> × <%= 1 + (product.title || '').length % 8 %> inches</td></tr>
-          <tr><td><strong>Weight</strong></td><td><%= (0.5 + ((product.title || '').length % 50) / 10).toFixed(1) %> lbs</td></tr>
-          <tr><td><strong>Warranty</strong></td><td><%= [1, 2, 3, 5][(product.title || '').length % 4] %>-year limited</td></tr>
-        </table>
-      </div>
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         1. STOCK STATUS — always present, message randomly selected per-request
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <div class="stock-banner stock-banner--<%= vc.stock.cssClass %>">
+      <span class="stock-indicator"></span>
+      <span class="stock-message"><%= vc.stock.message %></span>
     </div>
 
-    <!-- Related Products -->
-    <div class="related-section fade-up">
-      <h2>Customers who viewed this item also viewed</h2>
-      <div class="related-grid">
-        <% related.forEach(function(rp) { %>
-          <div class="product-card">
-            <div class="img-wrap">
-              <img src="<%= rp.image %>?h=<%= (rp.title || '').length % 360 %>&off=<%= (rp.id || '').length %>" alt="<%= rp.title %>" loading="lazy">
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         5. PROMOTION BANNER — optional (35% chance), random message
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <% if (promoHtml) { %>
+    <div class="promo-banner">
+      <%- promoHtml %>
+    </div>
+    <% } %>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         PRODUCT GALLERY — main layout: images | buy box
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <div class="product-gallery">
+
+      <!-- ── Image column ─────────────────────────────────────────────────── -->
+      <div class="gallery-col">
+        <div class="main-img">
+          <img src="<%= product.image %>?h=<%= (product.title || '').length % 360 %>&w=500"
+               alt="<%= product.title %>"
+               class="product-main-image">
+        </div>
+        <!-- Thumbnail strip — volatile: sometimes shown, sometimes not -->
+        <% if (vc.showFeatureBullets) { %>
+        <div class="thumb-strip">
+          <% for (let t = 0; t < Math.min(product.imageCount, 6); t++) { %>
+            <div class="thumb <%= t === 0 ? 'active' : '' %>"
+                 onclick="document.querySelector('.product-main-image').src='<%= product.image %>?h=<%= (product.title.length + t * 47) % 360 %>&off=<%= t %>&w=500'">
+              <img src="<%= product.image %>?h=<%= (product.title.length + t * 47) % 360 %>&off=<%= t %>"
+                   alt="<%= product.title %> view <%= t + 1 %>" loading="lazy">
             </div>
-            <div class="info">
-              <div class="title"><a href="/product/<%= rp.id %>"><%= rp.title %></a></div>
-              <div class="rating"><span class="stars"><%= ['★★★☆☆','★★★★☆','★★★★★'][(rp.title || '').length % 3] %></span></div>
-              <div class="price"><span class="symbol">$</span><%= Math.floor(rp.price) %><span class="cents">.<%= String(Math.round((rp.price % 1) * 100)).padStart(2, '0') %></span></div>
+          <% } %>
+        </div>
+        <% } %>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════════════════
+             3. BUY BOX — core purchase area, sub-elements randomly toggled
+             ═══════════════════════════════════════════════════════════════════ -->
+      <div class="buy-box">
+        <h1 class="product-title"><%= product.title %></h1>
+        <div class="brand-link">Visit the <a href="#">ShopVista Store</a></div>
+
+        <!-- Star rating — always visible -->
+        <div class="rating-row">
+          <span class="stars-display"><%= '★'.repeat(Math.round(product.rating)) %><%= '☆'.repeat(5 - Math.round(product.rating)) %></span>
+          <span class="rating-value"><%= product.rating.toFixed(1) %></span>
+          <a href="#reviews" class="rating-link"><%= product.reviewCount.toLocaleString() %> ratings</a>
+        </div>
+
+        <hr class="buy-box-divider">
+
+        <!-- 4. DISCOUNT PRICES — optional list price with strikethrough -->
+        <% if (vc.showListPrice && product.listPrice) { %>
+        <div class="price-section">
+          <span class="list-price">$<%= product.listPrice.toFixed(2) %></span>
+          <span class="price-lg" data-base-price="<%= product.price.toFixed(2) %>">
+            <span class="symbol">$</span><%= Math.floor(product.price) %><span class="cents">.<%= String(Math.round((product.price % 1) * 100)).padStart(2, '0') %></span>
+          </span>
+          <% if (vc.showYouSave) { %>
+          <span class="you-save">You Save: $<%= (product.listPrice - product.price).toFixed(2) %> (<%= Math.round((1 - product.price / product.listPrice) * 100) %>%)</span>
+          <% } %>
+        </div>
+        <% } else { %>
+        <div class="price-section">
+          <span class="price-lg" data-base-price="<%= product.price.toFixed(2) %>">
+            <span class="symbol">$</span><%= Math.floor(product.price) %><span class="cents">.<%= String(Math.round((product.price % 1) * 100)).padStart(2, '0') %></span>
+          </span>
+        </div>
+        <% } %>
+
+        <!-- Delivery estimate (always present, text varies) -->
+        <p class="delivery"><%- vc.stock.delivery %></p>
+
+        <!-- Shipping info — volatile: different details every request -->
+        <p class="shipping-info">
+          <% const shippingOptions = [
+            'FREE Shipping on orders over $25.00 shipped by ShopVista.',
+            'FREE Shipping on orders over $35.00. Delivered within 3-5 business days.',
+            'FREE Shipping for Prime members. Non-Prime: $5.99 flat rate.',
+            'Arrives between <b>' + ['July 28', 'July 29', 'July 30', 'July 31', 'Aug 1', 'Aug 2'][Math.floor(Math.random() * 6)] + '</b> and <b>' + ['Aug 3', 'Aug 4', 'Aug 5', 'Aug 6', 'Aug 7', 'Aug 8'][Math.floor(Math.random() * 6)] + '</b>.',
+            'Ships from and sold by ' + ['TechMart Direct', 'GlobalGadgets', 'ShopVista Warehouse', 'PrimeElectro'][Math.floor(Math.random() * 4)] + '.',
+          ]; %>
+          <%- shippingOptions[Math.floor(Math.random() * shippingOptions.length)] %>
+        </p>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             2. PRODUCT VARIANTS — randomly shown (85% chance), 1-3 group types
+             ═══════════════════════════════════════════════════════════════════ -->
+        <% if (vc.showVariants && product.variantGroups.length > 0) { %>
+        <div class="variant-section">
+          <% product.variantGroups.forEach(function(group) { %>
+          <div class="variant-group variant-group--<%= group.type %>">
+            <label class="variant-label"><%= group.label %>:</label>
+            <div class="variant-options">
+              <% group.options.forEach(function(opt, oi) { %>
+              <button class="variant-btn <%= oi === 0 ? 'selected' : '' %>"
+                      data-variant="<%= group.type %>"
+                      data-value="<%= opt %>"
+                      onclick="this.parentElement.querySelectorAll('.variant-btn').forEach(function(b){b.classList.remove('selected')});this.classList.add('selected');">
+                <% if (group.type === 'color') { %>
+                <span class="color-swatch" style="background:<%= ['#1a1a2e','#f5f5f0','#006994','#e74c3c','#228b22','#ff6347','#4a4a4a','#c0c0c0'][oi % 8] %>"></span>
+                <% } %>
+                <span><%= opt %></span>
+              </button>
+              <% }); %>
             </div>
           </div>
+          <% }); %>
+        </div>
+        <% } %>
+
+        <!-- Quantity selector — 75% chance -->
+        <% if (vc.showQuantitySelect) { %>
+        <div class="qty-section">
+          <label for="quantity">Quantity:</label>
+          <select id="quantity" name="quantity">
+            <% const maxQty = [5, 10, 15, 20, 30][Math.floor(Math.random() * 5)]; %>
+            <% for (let q = 1; q <= maxQty; q++) { %>
+            <option value="<%= q %>"><%= q %></option>
+            <% } %>
+          </select>
+        </div>
+        <% } %>
+
+        <!-- Buy buttons — Add to Cart always present, Buy Now optional (60%) -->
+        <div class="buy-actions">
+          <button class="btn-lg btn-add">Add to Cart</button>
+          <% if (vc.showBuyNow) { %>
+          <button class="btn-lg btn-buy">Buy Now</button>
+          <% } %>
+        </div>
+
+        <!-- Secure transaction note — 70% chance -->
+        <% if (vc.showSecureTransaction) { %>
+        <div class="secure-note">
+          <span>🔒</span> Secure transaction
+        </div>
+        <% } %>
+
+        <!-- Gift option — 25% chance -->
+        <% if (vc.showGiftOption) { %>
+        <div class="gift-option">
+          <label>
+            <input type="checkbox" name="gift"> <span>🎁</span> Send as a gift. Include a personalized message.
+          </label>
+        </div>
+        <% } %>
+
+        <!-- Wishlist — 80% chance -->
+        <% if (vc.showAddToWishlist) { %>
+        <div class="wishlist-action">
+          <button class="btn-text">♡ Add to Wishlist</button>
+        </div>
+        <% } %>
+
+        <!-- Add to List — volatile: different list types -->
+        <div class="add-to-list">
+          <button class="btn-text">+ Add to List</button>
+        </div>
+
+      </div><!-- /buy-box -->
+
+    </div><!-- /product-gallery -->
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         PRODUCT DESCRIPTION — always present, content varies per product
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <div class="product-description-section">
+      <h2>About this item</h2>
+      <p class="product-desc"><%= product.description %></p>
+
+      <% if (vc.showFeatureBullets) { %>
+      <ul class="feature-list">
+        <% product.features.forEach(function(feat) { %>
+        <li><%= feat %></li>
+        <% }); %>
+      </ul>
+      <% } %>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         SPEC TABLE — optional (70% chance), volatile row count
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <% if (vc.showSpecTable) { %>
+    <div class="spec-section">
+      <h2>Product Specifications</h2>
+      <table class="spec-table">
+        <% const allSpecs = [
+          { label: 'Brand', value: ['TechPro', 'HomeStyle', 'SportMax', 'BookWise', 'GadgetLab'][Math.floor(Math.random() * 5)] },
+          { label: 'Model', value: 'SV-' + Math.floor(Math.random() * 9000 + 1000) },
+          { label: 'Weight', value: (Math.random() * 10 + 0.1).toFixed(2) + ' lbs' },
+          { label: 'Dimensions', value: Math.floor(Math.random() * 20 + 5) + ' x ' + Math.floor(Math.random() * 15 + 3) + ' x ' + Math.floor(Math.random() * 10 + 1) + ' in' },
+          { label: 'Color', value: ['Black', 'White', 'Silver', 'Blue', 'Red', 'Green'][Math.floor(Math.random() * 6)] },
+          { label: 'Material', value: ['Aluminum', 'Stainless Steel', 'Plastic', 'Silicone', 'Carbon Fiber', 'Glass'][Math.floor(Math.random() * 6)] },
+          { label: 'Warranty', value: ['1 Year Limited', '2 Year Limited', '3 Year Limited', 'Lifetime'][Math.floor(Math.random() * 4)] },
+          { label: 'Country of Origin', value: ['USA', 'China', 'Germany', 'Japan', 'Vietnam', 'Taiwan'][Math.floor(Math.random() * 6)] },
+        ]; %>
+        <% const specCount = [5, 6, 7, 8][Math.floor(Math.random() * 4)]; %>
+        <% for (let s = 0; s < Math.min(specCount, allSpecs.length); s++) { %>
+        <tr class="<%= s % 2 === 0 ? 'even' : 'odd' %>">
+          <td class="spec-label"><%= allSpecs[s].label %></td>
+          <td class="spec-value"><%= allSpecs[s].value %></td>
+        </tr>
+        <% } %>
+      </table>
+    </div>
+    <% } %>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         6. CUSTOMER REVIEWS — optional (75% chance), 1-5 reviews per request
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <% if (vc.showCustomerReviews && reviews.length > 0) { %>
+    <div class="reviews-section" id="reviews">
+      <div class="reviews-header">
+        <h2>Customer Reviews</h2>
+        <div class="reviews-summary">
+          <span class="stars-display"><%= '★'.repeat(Math.round(product.rating)) %><%= '☆'.repeat(5 - Math.round(product.rating)) %></span>
+          <span class="rating-value"><%= product.rating.toFixed(1) %> out of 5</span>
+          <span class="review-count"><%= product.reviewCount.toLocaleString() %> global ratings</span>
+        </div>
+      </div>
+
+      <% reviews.forEach(function(review) { %>
+      <div class="review-card">
+        <div class="review-header">
+          <span class="review-avatar"><%= review.reviewer.charAt(0).toUpperCase() %></span>
+          <span class="review-name"><%= review.reviewer %></span>
+          <span class="review-stars"><%= '★'.repeat(review.rating) %><%= '☆'.repeat(5 - review.rating) %></span>
+          <% if (review.verified) { %>
+          <span class="verified-badge">✓ Verified Purchase</span>
+          <% } %>
+        </div>
+        <div class="review-date">Reviewed on <%= review.date %></div>
+        <h4 class="review-title"><%= review.title %></h4>
+        <p class="review-body"><%= review.body %></p>
+        <div class="review-helpful">
+          <button class="btn-text-sm">Helpful (<%= review.helpfulCount %>)</button>
+          <button class="btn-text-sm">Report</button>
+        </div>
+      </div>
+      <% }); %>
+    </div>
+    <% } %>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         7. "ALSO BUY" SECTION — optional (65% chance), 2-5 products
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <% if (vc.showAlsoBuy && alsoBuy.length > 0) { %>
+    <div class="also-buy-section">
+      <div class="section-divider"></div>
+      <h2>Customers who bought this item also bought</h2>
+      <div class="product-grid small">
+        <% alsoBuy.forEach(function(p) { %>
+        <div class="product-card">
+          <div class="img-wrap">
+            <img src="<%= p.image %>?h=<%= (p.title || '').length % 360 %>&off=<%= (p.id || '').length %>" alt="<%= p.title %>" loading="lazy">
+          </div>
+          <div class="info">
+            <div class="title"><a href="/product/<%= p.id %>"><%= p.title %></a></div>
+            <div class="rating">
+              <span class="stars"><%= '★'.repeat(Math.round(p.rating)) %><%= '☆'.repeat(5 - Math.round(p.rating)) %></span>
+              <span><%= p.reviewCount %></span>
+            </div>
+            <div class="price">
+              <span class="symbol">$</span><%= Math.floor(p.price) %><span class="cents">.<%= String(Math.round((p.price % 1) * 100)).padStart(2, '0') %></span>
+            </div>
+          </div>
+        </div>
         <% }); %>
       </div>
     </div>
-</div>
+    <% } %>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         8. "SIMILAR PRODUCTS" — optional (60% chance), 2-5 products
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <% if (vc.showSimilar && similar.length > 0) { %>
+    <div class="similar-section">
+      <div class="section-divider"></div>
+      <h2>Similar items you might like</h2>
+      <div class="product-grid small">
+        <% similar.forEach(function(p) { %>
+        <div class="product-card">
+          <div class="img-wrap">
+            <img src="<%= p.image %>?h=<%= (p.title || '').length % 360 %>&off=<%= (p.id || '').length + 77 %>" alt="<%= p.title %>" loading="lazy">
+          </div>
+          <div class="info">
+            <div class="title"><a href="/product/<%= p.id %>"><%= p.title %></a></div>
+            <div class="rating">
+              <span class="stars"><%= '★'.repeat(Math.round(p.rating)) %><%= '☆'.repeat(5 - Math.round(p.rating)) %></span>
+              <span><%= p.reviewCount %></span>
+            </div>
+            <div class="price">
+              <span class="symbol">$</span><%= Math.floor(p.price) %><span class="cents">.<%= String(Math.round((p.price % 1) * 100)).padStart(2, '0') %></span>
+            </div>
+          </div>
+        </div>
+        <% }); %>
+      </div>
+    </div>
+    <% } %>
+
+    <!-- Report issue — volatile (30% chance) -->
+    <% if (vc.showReportIssue) { %>
+    <div class="report-section">
+      <a href="#">📢 Report an issue with this product or seller</a>
+    </div>
+    <% } %>
+
+  </div><!-- /product-content -->
+</div><!-- /product-detail -->
 
 <%- include('partials/footer') %>

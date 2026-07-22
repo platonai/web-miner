@@ -23,19 +23,26 @@ var crumbs = [
 <section class="section">
   <div class="section-inner">
     <div class="product-grid">
-      <% products.forEach(function(product) { %>
+      <% products.forEach(function(product, pi) { %>
         <div class="product-card">
           <div class="img-wrap">
-            <span class="badge">NEW</span>
+            <% if (pi % 5 === 0) { %><span class="badge">BEST SELLER</span><% } %>
+            <% if (pi % 7 === 3) { %><span class="badge" style="background:#007600;">NEW</span><% } %>
             <img src="<%= product.image %>?h=<%= (product.title || '').length % 360 %>&off=<%= (product.id || '').length %>" alt="<%= product.title %>" loading="lazy">
           </div>
           <div class="info">
             <div class="title"><a href="/product/<%= product.id %>"><%= product.title %></a></div>
             <div class="rating">
-              <span class="stars"><%= ['★★★☆☆','★★★★☆','★★★★★'][(product.title || '').length % 3] %></span>
-              <span><%= 100 + (product.title || '').length % 2400 %></span>
+              <span class="stars"><%= '★'.repeat(Math.round(product.rating || (3 + ((product.title || '').length % 3)))) %><%= '☆'.repeat(5 - Math.round(product.rating || (3 + ((product.title || '').length % 3)))) %></span>
+              <span><%= (product.reviewCount || (100 + (product.title || '').length % 2400)).toLocaleString() %></span>
             </div>
-            <div class="price"><span class="symbol">$</span><%= Math.floor(product.price) %><span class="cents">.<%= String(Math.round((product.price % 1) * 100)).padStart(2, '0') %></span></div>
+            <div class="price">
+              <span class="symbol">$</span><%= Math.floor(product.price) %><span class="cents">.<%= String(Math.round((product.price % 1) * 100)).padStart(2, '0') %></span>
+            </div>
+            <% if (product.listPrice) { %>
+            <div class="was-price">Was: <s>$<%= product.listPrice.toFixed(2) %></s></div>
+            <% } %>
+            <div class="prime">✓ Prime</div>
           </div>
           <div class="actions">
             <button class="btn-sm btn-sm-primary">Add to Cart</button>
