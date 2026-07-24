@@ -57,7 +57,7 @@ jobs:
           echo "::group::Verifying release assets"
 
           JAR_PATH="scent-miner.jar"
-          LAUNCHER_PATH="bin/webminer.ps1"
+          LAUNCHER_PATH="skills/scent-miner/scripts/webminer.ps1"
 
           if [ ! -f "$JAR_PATH" ]; then
             echo "::error::JAR not found: $JAR_PATH"
@@ -76,7 +76,7 @@ jobs:
           echo "jar_size_human=$JAR_SIZE_HUMAN" >> "$GITHUB_OUTPUT"
 
           echo "📦 scent-miner.jar — $JAR_SIZE_HUMAN"
-          echo "📜 bin/webminer.ps1"
+          echo "📜 skills/scent-miner/scripts/webminer.ps1"
 
           echo "::endgroup::"
 
@@ -87,32 +87,31 @@ jobs:
           VERSION="${{ steps.meta.outputs.version }}"
           JAR_SIZE="${{ steps.verify.outputs.jar_size_human }}"
 
-          cat > /tmp/release_notes.md << EOF
+          cat > /tmp/release_notes.md << NOTES_EOF
           ## 📦 Assets
 
           | Asset | Description |
           |-------|-------------|
-          | **scent-miner.jar** | ProGuard-obfuscated fat JAR ($JAR_SIZE) |
-          | **webminer.ps1** | PowerShell launcher — auto-detects Java 17+ |
+          | **scent-miner.jar** | Self-contained JAR ($JAR_SIZE) |
+          | **webminer.ps1** | PowerShell launcher |
 
           ## ⚡ Quick Start
 
           ```powershell
           # Download both files and run:
-          .\webminer.ps1 --input C:\path\to\html\files
+          .\webminer.ps1 all C:\path\to\html\files
           ```
 
           Or directly with Java:
 
           ```bash
-          java -jar scent-miner.jar --input /path/to/html/files
+          java -jar scent-miner.jar all /path/to/html/files
           ```
 
           ## 🔧 Requirements
 
-          - **JDK 17+** ([Adoptium](https://adoptium.net/download/) recommended)
-          - **Windows x86_64** (native libraries are Windows-only)
-          EOF
+          - **Java 17** or later
+          NOTES_EOF
 
           echo "notes_file=/tmp/release_notes.md" >> "$GITHUB_OUTPUT"
 
@@ -121,7 +120,7 @@ jobs:
         with:
           files: |
             scent-miner.jar
-            bin/webminer.ps1
+            skills/scent-miner/scripts/webminer.ps1
           name: WebMiner v${{ steps.meta.outputs.version }}
           body_path: /tmp/release_notes.md
           tag_name: ${{ steps.meta.outputs.tag }}
