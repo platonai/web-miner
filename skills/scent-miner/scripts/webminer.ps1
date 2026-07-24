@@ -1,31 +1,41 @@
 #!/usr/bin/env pwsh
 <#
 .SYNOPSIS
-    WebMiner — extract structured data from local HTML files.
+    WebMiner — run the Scent ML pipeline on local HTML files.
 
 .DESCRIPTION
     Finds a Java 17+ installation and launches the WebMiner fat JAR
     with all required JVM module-opens flags.  Every argument is
     forwarded directly to WebMiner.main().
 
+    Subcommands:
+      encode   <html-dir> [--output <path>] [--max-files <n>]
+      cluster  <csv-path> [--k <n>] [--output <dir>]
+      views    [<result-dir>]
+      all      <html-dir> [--k <n>] [--output <dir>] [--max-files <n>]
+               [--resume [<project-id>]]
+
 .PARAMETER JavaHome
     Explicit JAVA_HOME path.  If omitted the script auto-detects a
     Java 17+ installation.
 
 .EXAMPLE
-    .\webminer.ps1 --input C:\data\html-pages
+    .\webminer.ps1 all C:\data\amazon-pages
 
 .EXAMPLE
-    .\webminer.ps1 --input C:\data\html-pages -c "#mainContent" -l 50
+    .\webminer.ps1 all C:\data\amazon-pages --k 12 --max-files 50
 
 .EXAMPLE
-    .\webminer.ps1 --input C:\data\html-pages --no-trust-samples --require-size 1000000
+    .\webminer.ps1 encode C:\data\amazon-pages --max-files 20
+
+.EXAMPLE
+    .\webminer.ps1 cluster C:\data\encoded.csv --k 8
 
 .EXAMPLE
     .\webminer.ps1 --help
 
 .EXAMPLE
-    .\webminer.ps1 -JavaHome "D:\jdk-17" --input C:\data\html-pages
+    .\webminer.ps1 -JavaHome "D:\jdk-17" all C:\data\amazon-pages
 #>
 
 $ErrorActionPreference = 'Stop'
