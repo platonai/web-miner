@@ -40,9 +40,12 @@ projects and builds views for each one.
 
 ### all
 
-| Flag | Purpose |
-|------|---------|
-| `--resume [<project-id>]` | Pick up where a previous run left off. If no project ID is given, the most recent project is used. |
+| Flag | Default | Purpose |
+|------|---------|---------|
+| `--k <n>` | auto-detected | Number of clusters |
+| `--max-files <n>` | `40` | Maximum number of HTML files to process |
+| `--output <dir>` | `<html-dir>-ml-output` | Where to write results |
+| `--resume [<project-id>]` | — | Pick up where a previous run left off. If no project ID is given, the most recent project is used. |
 
 ### Global
 
@@ -87,20 +90,38 @@ java -jar scent-miner.jar views /data/results/kmeans-result/p1723201624
 
 ## Output
 
-The pipeline writes to `<html-dir>-ml-output/` (or wherever `--output` points):
+The `all` pipeline writes clustering results to `<html-dir>-ml-output/` (or
+wherever `--output` points):
 
 ```
 <html-dir>-ml-output/
-  ├── encoded.csv
   └── kmeans-result/
       └── p<timestamp>/
           ├── clusteringInfo.txt
           ├── predictionAndMinimalFeatures/
-          │   └── ...
-          └── predictionAndMinimalFeatures.views/
-              ├── index.html    ← Open this in a browser
-              ├── *.xlsx        ← Excel reports
-              └── ...
+          │   └── result.csv
+          ├── predictionAndOriginalFeatures/
+          │   └── result.csv
+          └── predictionAndFinalFeatures/
+              └── result.csv
+```
+
+The encoded CSV and the interactive views (HTML/XLSX) are stored in the system
+ML data directory. To build views alongside the output, run:
+
+```bash
+java -jar scent-miner.jar views <html-dir>-ml-output/kmeans-result/p<timestamp>
+```
+
+This creates:
+
+```
+<html-dir>-ml-output/kmeans-result/p<timestamp>/
+  └── predictionAndMinimalFeatures.views/
+      ├── index.html    ← Open this in a browser
+      ├── *.xlsx        ← Excel reports
+      ├── *.json        ← Data files
+      └── ...
 ```
 
 Open `index.html` in a browser to explore the clustering results. The `.xlsx`
