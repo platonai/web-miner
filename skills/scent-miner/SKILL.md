@@ -10,7 +10,7 @@ analysis. Everything runs locally; no data leaves your machine.
 ```bash
 # One-shot: download the latest release and run
 .\webminer.ps1 install
-.\webminer.ps1 --input /path/to/html/files
+.\webminer.ps1 all /path/to/html/files
 ```
 
 Or use the JAR directly:
@@ -42,6 +42,21 @@ When you run a pipeline command, `webminer.ps1` auto-detects the JAR:
 ```bash
 java -jar scent-miner.jar all /path/to/html/files
 ```
+
+## Running the Example
+
+The `run-example` command downloads a pre-uploaded test dataset of real web
+pages, extracts it, and runs the full pipeline on it — no manual setup required
+beyond Java 17 and 7-Zip:
+
+```bash
+.\webminer.ps1 run-example
+.\webminer.ps1 run-example --k 8
+```
+
+The dataset is cached at `~/.scent/test-data/amazon.com/` so subsequent runs
+skip the download. This is the quickest way to see WebMiner in action with
+real-world HTML pages.
 
 ## Commands
 

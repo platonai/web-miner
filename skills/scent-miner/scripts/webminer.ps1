@@ -13,6 +13,8 @@
       update                 Check for and install the latest release
       version                Show installed and latest available versions
       uninstall              Remove the installed release
+      run-example            Download the test dataset and run the full
+                             pipeline on it (requires 7-Zip)
 
 .PARAMETER JavaHome
     Explicit JAVA_HOME path.  If omitted the script auto-detects a
@@ -27,19 +29,19 @@
     .\webminer.ps1 uninstall
 
 .EXAMPLE
-    .\webminer.ps1 --input C:\data\html-pages
+    .\webminer.ps1 run-example
 
 .EXAMPLE
-    .\webminer.ps1 --input C:\data\html-pages -c "#mainContent" -l 50
+    .\webminer.ps1 run-example --k 8
 
 .EXAMPLE
-    .\webminer.ps1 --input C:\data\html-pages --no-trust-samples --require-size 1000000
+    .\webminer.ps1 all C:\data\html-pages
 
 .EXAMPLE
-    .\webminer.ps1 --help
+    .\webminer.ps1 all C:\data\html-pages --k 12 --max-files 50
 
 .EXAMPLE
-    .\webminer.ps1 -JavaHome "D:\jdk-17" --input C:\data\html-pages
+    .\webminer.ps1 -JavaHome "D:\jdk-17" all C:\data\html-pages
 #>
 
 $ErrorActionPreference = 'Stop'
@@ -58,7 +60,7 @@ $VersionFile = Join-Path $InstallRoot 'version.txt'
 $ChecksumFile = Join-Path $InstallRoot 'checksum.sha256'
 
 # Management subcommands
-$ManagementCommands = @('install', 'update', 'version', 'uninstall')
+$ManagementCommands = @('install', 'update', 'version', 'uninstall', 'run-example')
 
 # ------------------------------------------------------------------
 # Parse -JavaHome and command out of the argument list
@@ -105,6 +107,7 @@ Management:
   update                 Check for and install the latest release
   version                Show installed and latest available versions
   uninstall              Remove the installed release
+  run-example            Run the full pipeline on the mock e-commerce site
 
 Usage:
   .\webminer.ps1 [command] [options]
@@ -115,12 +118,12 @@ Management examples:
   .\webminer.ps1 update
   .\webminer.ps1 version
   .\webminer.ps1 uninstall
+  .\webminer.ps1 run-example
 
 Run examples:
-  .\webminer.ps1 --input C:\data\html-pages
-  .\webminer.ps1 --input C:\data\html-pages -c "#mainContent" -l 50
-  .\webminer.ps1 --input C:\data\html-pages --no-trust-samples
-  .\webminer.ps1 -JavaHome "D:\jdk-17" --input C:\data\html-pages
+  .\webminer.ps1 all C:\data\html-pages
+  .\webminer.ps1 all C:\data\html-pages --k 12 --max-files 50
+  .\webminer.ps1 -JavaHome "D:\jdk-17" all C:\data\html-pages
 
 Run priority (automatic):
   1. Installed JAR  → ~/.scent/webminer/lib/scent-miner.jar
@@ -408,6 +411,110 @@ function Install-WebMiner {
 }
 
 # ==================================================================
+# Run-example: download test dataset and run the full pipeline
+# ==================================================================
+
+function Find-7Zip {
+<#
+.SYNOPSIS
+    Locates 7z.exe on PATH or in common install locations.
+#>
+    $onPath = Get-Command 7z.exe -ErrorAction SilentlyContinue
+    if ($onPath) { return $onPath.Source }
+
+    $candidates = @(
+        'C:\Program Files\7-Zip\7z.exe',
+        'D:\Program Files\7-Zip\7z.exe',
+        "${env:ProgramFiles}\7-Zip\7z.exe",
+        "${env:ProgramFiles(x86)}\7-Zip\7z.exe"
+    )
+
+    foreach ($candidate in $candidates) {
+        if ($candidate -and (Test-Path $candidate)) {
+            return $candidate
+        }
+    }
+
+    Write-Error @"
+7-Zip (7z.exe) not found.
+Install from https://www.7-zip.org/ or ensure 7z.exe is on PATH.
+"@
+    exit 1
+}
+
+function Invoke-RunExample {
+<#
+.SYNOPSIS
+    Downloads the pre-uploaded test dataset (real Amazon HTML pages),
+    extracts it, and runs the full WebMiner pipeline on it.
+#>
+    # Extra args after "run-example" are forwarded to WebMiner (e.g. --k 8)
+    $ExtraArgs = $RemainingArgs
+
+    $ArchiveUrl  = 'https://web-miner.oss-cn-beijing.aliyuncs.com/test/amazon.com.7z'
+    $ArchiveName = 'amazon.com.7z'
+    $ExtractDir  = Join-Path $env:USERPROFILE '.scent\test-data'
+    $DataDir     = Join-Path $ExtractDir 'amazon.com'    # archive contains this subdirectory
+    $ArchivePath = Join-Path $env:TEMP $ArchiveName
+
+    # --- Already extracted? Skip download ---
+    if ((Test-Path $DataDir) -and (Get-ChildItem -Recurse -File $DataDir -ErrorAction SilentlyContinue | Where-Object { $_.Extension -match '\.html?$' } | Select-Object -First 1)) {
+        Write-Host "[WebMiner] Test dataset already present at: $DataDir" -ForegroundColor Green
+    }
+    else {
+        # --- Download the archive ---
+        if ((Test-Path $ArchivePath) -and (Get-Item $ArchivePath).Length -gt 0) {
+            Write-Host "[WebMiner] Archive already cached at: $ArchivePath" -ForegroundColor DarkGray
+        }
+        else {
+            Write-Host "[WebMiner] Downloading test dataset ..." -ForegroundColor Cyan
+            Write-Host "[WebMiner] From: $ArchiveUrl" -ForegroundColor DarkGray
+
+            try {
+                Invoke-WebRequest -Uri $ArchiveUrl -OutFile $ArchivePath -UseBasicParsing
+            }
+            catch {
+                # Fallback: try curl.exe
+                $curl = Get-Command curl.exe -ErrorAction SilentlyContinue
+                if ($curl) {
+                    Write-Host "[WebMiner] Invoke-WebRequest failed, trying curl.exe ..." -ForegroundColor Yellow
+                    & curl.exe -L -o $ArchivePath $ArchiveUrl
+                    if ($LASTEXITCODE -ne 0) {
+                        Write-Error "Download failed (curl exit code: $LASTEXITCODE)"
+                        exit 1
+                    }
+                }
+                else {
+                    Write-Error "Download failed: $_"
+                    exit 1
+                }
+            }
+
+            $size = '{0:N1} MB' -f ((Get-Item $ArchivePath).Length / 1MB)
+            Write-Host "[WebMiner] Downloaded $size to $ArchivePath" -ForegroundColor Green
+        }
+
+        # --- Extract (archive contains an amazon.com/ directory) ---
+        $SevenZip = Find-7Zip
+        Write-Host "[WebMiner] Extracting to $ExtractDir ..." -ForegroundColor Cyan
+        Remove-Item -Recurse -Force $ExtractDir -ErrorAction SilentlyContinue
+        New-Item -ItemType Directory -Force -Path $ExtractDir | Out-Null
+
+        & $SevenZip x $ArchivePath -o"$ExtractDir" -y | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error "7-Zip extraction failed (exit code: $LASTEXITCODE)"
+            exit 1
+        }
+
+        $htmlCount = (Get-ChildItem -Recurse -File $DataDir -ErrorAction SilentlyContinue | Where-Object { $_.Extension -match '\.html?$' }).Count
+        Write-Host "[WebMiner] Extracted $htmlCount HTML files to $DataDir" -ForegroundColor Green
+    }
+
+    # --- Set up RemainingArgs so the main dispatch launches WebMiner ---
+    $script:RemainingArgs = @('all', $DataDir) + $ExtraArgs
+}
+
+# ==================================================================
 # Management command handlers
 # ==================================================================
 
@@ -543,10 +650,12 @@ function Invoke-Uninstall {
 
 # --- Management commands (no Java needed) ---
 switch ($Command) {
-    'install'   { Invoke-Install -Version $RemainingArgs[0]; exit 0 }
-    'update'    { Invoke-Update; exit 0 }
-    'version'   { Invoke-Version; exit 0 }
-    'uninstall' { Invoke-Uninstall; exit 0 }
+    'install'      { Invoke-Install -Version $RemainingArgs[0]; exit 0 }
+    'update'       { Invoke-Update; exit 0 }
+    'version'      { Invoke-Version; exit 0 }
+    'uninstall'    { Invoke-Uninstall; exit 0 }
+    'run-example'  { Invoke-RunExample }
+    # Falls through to the Java-launching section below
 }
 
 # --- Run: find Java, find JAR, launch ---
