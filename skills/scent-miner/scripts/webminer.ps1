@@ -150,7 +150,9 @@ function Find-Java17 {
     if ($envJavaHome) {
         $javaExe = Join-Path $envJavaHome 'bin\java.exe'
         if (Test-Path $javaExe) {
-            $ver = & $javaExe -version 2>&1 | Select-Object -First 1
+            # Use cmd /c to redirect stderr → stdout at the OS level so
+            # PowerShell never sees an error record (avoids ErrorAction Stop).
+            $ver = cmd /c "`"$javaExe`" -version 2>&1" | Select-Object -First 1
             if ($ver -match 'version "(\d+)' -and [int]$Matches[1] -ge 17) {
                 return $envJavaHome
             }
@@ -175,7 +177,8 @@ function Find-Java17 {
     # 3. `java` on PATH
     $pathJava = Get-Command java -ErrorAction SilentlyContinue
     if ($pathJava) {
-        $ver = & java -version 2>&1 | Select-Object -First 1
+        # Use cmd /c to redirect stderr → stdout at the OS level (see note above).
+        $ver = cmd /c "java -version 2>&1" | Select-Object -First 1
         if ($ver -match 'version "(\d+)' -and [int]$Matches[1] -ge 17) {
             $javaBin = (Get-Command java).Source
             return (Split-Path (Split-Path $javaBin -Parent) -Parent)
