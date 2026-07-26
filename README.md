@@ -6,7 +6,7 @@ results as HTML reports and Excel spreadsheets.
 
 **Everything runs locally — no network calls, no data leaves your machine.**
 
-> **Latest release:** v0.0.5 | **Download:** [scent-miner.jar](https://github.com/platonai/web-miner/releases/latest/download/scent-miner.jar)
+> **Latest release:** v0.0.4 | **Download:** [scent-miner.jar](https://github.com/platonai/web-miner/releases/latest/download/scent-miner.jar)
 
 ## Quick Start
 
