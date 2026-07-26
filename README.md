@@ -4,9 +4,9 @@ Extract structured data from local HTML files. WebMiner analyzes a directory of
 web pages, identifies recurring patterns and data tables, and exports the
 results as HTML reports and Excel spreadsheets.
 
-**Everything runs locally 鈥?no network calls, no data leaves your machine.**
+**Everything runs locally — no network calls, no data leaves your machine.**
 
-> **Latest release:** v0.0.3 | **Download:** [scent-miner.jar](https://github.com/platonai/web-miner/releases/latest/download/scent-miner.jar)
+> **Latest release:** v0.0.4 | **Download:** [scent-miner.jar](https://github.com/platonai/web-miner/releases/latest/download/scent-miner.jar)
 
 ## Quick Start
 
@@ -29,7 +29,7 @@ java -jar scent-miner.jar all /path/to/html/files
 `
 
 The miner scans all *.html / *.htm files, runs the full ML pipeline
-(encode 鈫?cluster 鈫?views), and writes the results to <input-dir>-ml-output/.
+(encode → cluster → views), and writes the results to <input-dir>-ml-output/.
 
 ## Usage
 
@@ -41,8 +41,8 @@ WebMiner <command> [args...] [options...]
 
 | Command | Usage | Purpose |
 |---------|-------|---------|
-| ll <dir> | Full pipeline | encode 鈫?cluster 鈫?views in one pass |
-| encode <dir> | Encode HTML 鈫?CSV | Extract feature vectors from HTML files |
+| ll <dir> | Full pipeline | encode → cluster → views in one pass |
+| ncode <dir> | Encode HTML → CSV | Extract feature vectors from HTML files |
 | cluster <csv> | Run KMeans | Cluster encoded CSV (k auto-detected) |
 | iews <dir> | Build views | HTML/XLSX views from clustering results |
 
@@ -53,9 +53,9 @@ WebMiner <command> [args...] [options...]
 | --k <n> | auto-detect | Number of clusters |
 | --max-files <n> | 40 | Max HTML files to encode |
 | --output <path> | auto | Override output directory |
-| --resume [id] | 鈥?| Resume from last completed step |
-| -am, --also-make | 鈥?| Run all dependent stages first |
-| --help, -h | 鈥?| Print usage |
+| --resume [id] | — | Resume from last completed step |
+| -am, --also-make | — | Run all dependent stages first |
+| --help, -h | — | Print usage |
 
 ### Examples
 
@@ -92,15 +92,15 @@ flags:
 
 `
 <input-dir>-ml-output/
-  鈹斺攢鈹€ kmeans-result/
-      鈹斺攢鈹€ p<project-id>/
-          鈹溾攢鈹€ predictionAndMinimalFeatures/
-          鈹?  鈹溾攢鈹€ index.html          # HTML report
-          鈹?  鈹溾攢鈹€ *.xlsx              # Excel export
-          鈹?  鈹斺攢鈹€ ...
-          鈹斺攢鈹€ predictionAndMinimalFeatures.views/
-              鈹溾攢鈹€ index.html          # Prompt views
-              鈹斺攢鈹€ ...
+  └── kmeans-result/
+      └── p<project-id>/
+          ├── predictionAndMinimalFeatures/
+          │   ├── index.html          # HTML report
+          │   ├── *.xlsx              # Excel export
+          │   └── ...
+          └── predictionAndMinimalFeatures.views/
+              ├── index.html          # Prompt views
+              └── ...
 `
 
 Open index.html in a browser to browse extracted data, or load .xlsx files
@@ -121,10 +121,10 @@ structured data tables from those patterns.
 
 Built with:
 - **Kotlin** 2.3.x / **Java** 17
-- **ProGuard** 7.9 鈥?bytecode obfuscation
-- **Spring Boot** 4.1 鈥?dependency injection
-- **Apache Spark ML** 鈥?clustering & feature extraction
-- **Pulsar DOM** 鈥?HTML parsing & visual analysis
+- **ProGuard** 7.9 — bytecode obfuscation
+- **Spring Boot** 4.1 — dependency injection
+- **Apache Spark ML** — clustering & feature extraction
+- **Pulsar DOM** — HTML parsing & visual analysis
 
 ## License
 

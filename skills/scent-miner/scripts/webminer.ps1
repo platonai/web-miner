@@ -1,7 +1,7 @@
 #!/usr/bin/env pwsh
 <#
 .SYNOPSIS
-    WebMiner 鈥?extract structured data from local HTML files.
+    WebMiner — extract structured data from local HTML files.
 
 .DESCRIPTION
     Finds a Java 17+ installation and launches the WebMiner fat JAR
@@ -13,7 +13,7 @@
     Java 17+ installation.
 
 .EXAMPLE
-    # Full pipeline (encode 鈫?cluster 鈫?views)
+    # Full pipeline (encode → cluster → views)
     .\webminer.ps1 all C:\data\html-pages
 
 .EXAMPLE
