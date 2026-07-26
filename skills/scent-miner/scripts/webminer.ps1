@@ -254,10 +254,13 @@ function Invoke-WebMiner {
 
     $appName = if ($env:APP_NAME) { $env:APP_NAME } else { 'webminer' }
 
+    # Use -cp with explicit main class instead of -jar so we always get the
+    # subcommand CLI (WebMiner), even if the JAR manifest points elsewhere.
     $javaArgs = @(
         "-Dapp.name=$appName"
     ) + $ModuleOpts + @(
-        '-jar', $JarPath
+        '-cp', $JarPath,
+        'ai.platon.scent.miner.WebMiner'
     ) + $RemainingArgs
 
     Write-Host '[WebMiner] Launching ...' -ForegroundColor DarkGray
