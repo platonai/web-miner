@@ -8,6 +8,38 @@ analysis. Everything runs locally; no data leaves your machine.
 ## Quick Start
 
 ```bash
+# One-shot: download the latest release and run
+.\webminer.ps1 install
+.\webminer.ps1 --input /path/to/html/files
+```
+
+Or use the JAR directly:
+
+```bash
+java -jar scent-miner.jar all /path/to/html/files
+```
+
+## Managing Releases
+
+The `webminer.ps1` launcher can self-install and self-update from GitHub Releases:
+
+```bash
+.\webminer.ps1 install              # Download and install the latest release
+.\webminer.ps1 install v0.0.1       # Install a specific version
+.\webminer.ps1 update               # Check for and install the latest release
+.\webminer.ps1 version              # Show installed and latest available versions
+.\webminer.ps1 uninstall            # Remove the installed release
+```
+
+Releases are installed to `~/.scent/webminer/` and checked against
+`https://github.com/platonai/web-miner/releases`. SHA-256 checksums are
+verified automatically on download.
+
+When you run a pipeline command, `webminer.ps1` auto-detects the JAR:
+1. Installed release at `~/.scent/webminer/lib/scent-miner.jar`
+2. Bundled JAR in `lib/` next to or above the script
+
+```bash
 java -jar scent-miner.jar all /path/to/html/files
 ```
 
