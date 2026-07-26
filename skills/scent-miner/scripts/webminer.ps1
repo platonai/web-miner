@@ -263,10 +263,15 @@ function Invoke-WebMiner {
         '-jar', $JarPath
     ) + $RemainingArgs
 
-    Write-Host '[WebMiner] Launching ...' -ForegroundColor DarkGray
+    Write-Host '[WebMiner] Launching ...' -ForegroundColor Cyan
+    Write-Host "  Java : $Java17Home" -ForegroundColor DarkGray
+    Write-Host "  JAR  : $JarPath" -ForegroundColor DarkGray
     $javaExe = Join-Path $Java17Home 'bin\java.exe'
-    & $javaExe @javaArgs
-    return $LASTEXITCODE
+    # Use Start-Process -NoNewWindow -Wait so Java's stdout/stderr are
+    # connected directly to the console (avoids buffering issues that
+    # can occur with the & operator in nested PowerShell sessions).
+    $proc = Start-Process -FilePath $javaExe -ArgumentList $javaArgs -NoNewWindow -Wait -PassThru
+    return $proc.ExitCode
 }
 
 # ==================================================================
