@@ -86,7 +86,7 @@ jobs:
         env:
           OSS_ENDPOINT: oss-cn-beijing.aliyuncs.com
           OSS_REGION: cn-beijing
-          OSS_BUCKET: scent-webminer
+          OSS_BUCKET: web-miner
           OSS_ACCESS_KEY_ID: ${{ secrets.OSS_ACCESS_KEY_ID }}
           OSS_ACCESS_KEY_SECRET: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
         run: |
@@ -161,7 +161,7 @@ jobs:
         env:
           OSS_ENDPOINT: oss-cn-beijing.aliyuncs.com
           OSS_REGION: cn-beijing
-          OSS_BUCKET: scent-webminer
+          OSS_BUCKET: web-miner
           OSS_ACCESS_KEY_ID: ${{ secrets.OSS_ACCESS_KEY_ID }}
           OSS_ACCESS_KEY_SECRET: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
         run: |
@@ -204,7 +204,7 @@ jobs:
         env:
           OSS_ENDPOINT: oss-cn-beijing.aliyuncs.com
           OSS_REGION: cn-beijing
-          OSS_BUCKET: scent-webminer
+          OSS_BUCKET: web-miner
           OSS_ACCESS_KEY_ID: ${{ secrets.OSS_ACCESS_KEY_ID }}
           OSS_ACCESS_KEY_SECRET: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
         run: |
@@ -254,7 +254,7 @@ jobs:
         env:
           OSS_ENDPOINT: oss-cn-beijing.aliyuncs.com
           OSS_REGION: cn-beijing
-          OSS_BUCKET: scent-webminer
+          OSS_BUCKET: web-miner
           OSS_ACCESS_KEY_ID: ${{ secrets.OSS_ACCESS_KEY_ID }}
           OSS_ACCESS_KEY_SECRET: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
         run: |
@@ -320,20 +320,20 @@ jobs:
             echo "- **Release URL**: ${{ steps.resolve.outputs.release_url }}"
             echo "- **Assets**: ${{ steps.resolve.outputs.assets_count }}"
             echo "- **Prerelease**: ${IS_PRERELEASE}"
-            echo "- **OSS Bucket**: \`oss://scent-webminer/releases/download/${{ steps.resolve.outputs.tag_name }}/\`"
+            echo "- **OSS Bucket**: \`oss://web-miner/releases/download/${{ steps.resolve.outputs.tag_name }}/\`"
             if [[ "$IS_PRERELEASE" != "true" ]]; then
-              echo "- **Latest symlink**: \`oss://scent-webminer/releases/latest/download/\` (GitHub-compatible layout)"
-              echo "- **Release metadata**: \`https://scent-webminer.oss-cn-beijing.aliyuncs.com/releases/latest-release.json\`"
+              echo "- **Latest symlink**: \`oss://web-miner/releases/latest/download/\` (GitHub-compatible layout)"
+              echo "- **Release metadata**: \`https://web-miner.oss-cn-beijing.aliyuncs.com/releases/latest-release.json\`"
               echo "- **SHA256 checksums** (latest):"
-              echo "  - \`https://scent-webminer.oss-cn-beijing.aliyuncs.com/releases/latest/download/SHA256SUMS\`"
+              echo "  - \`https://web-miner.oss-cn-beijing.aliyuncs.com/releases/latest/download/SHA256SUMS\`"
             else
               echo "- **Latest symlinks**: ⏭️ Skipped (prerelease — \`latest\` only tracks stable releases)"
               echo "- **Release metadata**: ⏭️ Skipped (prerelease)"
             fi
             echo "- **Direct download** (versioned):"
-            echo "  - \`https://scent-webminer.oss-cn-beijing.aliyuncs.com/releases/download/${{ steps.resolve.outputs.tag_name }}/scent-miner.jar\`"
-            echo "  - \`https://scent-webminer.oss-cn-beijing.aliyuncs.com/releases/download/${{ steps.resolve.outputs.tag_name }}/webminer.ps1\`"
+            echo "  - \`https://web-miner.oss-cn-beijing.aliyuncs.com/releases/download/${{ steps.resolve.outputs.tag_name }}/scent-miner.jar\`"
+            echo "  - \`https://web-miner.oss-cn-beijing.aliyuncs.com/releases/download/${{ steps.resolve.outputs.tag_name }}/webminer.ps1\`"
             echo "- **SHA256 checksums** (versioned):"
-            echo "  - \`https://scent-webminer.oss-cn-beijing.aliyuncs.com/releases/download/${{ steps.resolve.outputs.tag_name }}/SHA256SUMS\`"
+            echo "  - \`https://web-miner.oss-cn-beijing.aliyuncs.com/releases/download/${{ steps.resolve.outputs.tag_name }}/SHA256SUMS\`"
             echo "- **Status**: ${{ job.status }}"
           } >> "$GITHUB_STEP_SUMMARY"
